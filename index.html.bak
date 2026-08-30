@@ -149,8 +149,6 @@ table.data td{padding:12px;border-bottom:1px solid var(--line)}
 .inv-line{display:flex;justify-content:space-between;font-size:13px;padding:3px 0}
 .inv-big{font-size:16px;font-weight:800}
 .receipt{width:var(--receipt-width,76mm);margin:0 auto;font-family:var(--receipt-font,'Segoe UI',Arial,sans-serif);font-size:var(--receipt-size,12px);line-height:1.42;color:#111;overflow-wrap:anywhere}
-.receipt-logo{text-align:var(--receipt-logo-align,center);margin:0 0 6px;line-height:1}
-.receipt-logo img{max-width:100%;height:auto;display:inline-block;vertical-align:middle;object-fit:contain}
 .receipt .inv-store{font-size:var(--receipt-title,22px);line-height:1.15}
 .receipt .inv-sub{font-size:calc(var(--receipt-size,12px) - 1px);color:#525252}
 .receipt .inv-line{font-size:inherit;gap:10px}
@@ -166,10 +164,6 @@ table.data td{padding:12px;border-bottom:1px solid var(--line)}
 .template-section{border-top:1px solid var(--line);margin-top:14px;padding-top:14px}
 .template-title{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}.template-title h4{font-size:15px}.template-title .hint{font-size:11px;color:var(--muted);font-weight:400}
 .template-presets{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px}.template-presets button{border:1px solid var(--line);background:#fff;border-radius:99px;padding:6px 10px;cursor:pointer;font-size:12px;font-weight:700;color:var(--text)}.template-presets button:hover{border-color:var(--primary);color:var(--primary);background:#f5f9ff}
-.logo-upload-card{background:#f8fbff;border:1px solid #d0e2ff;border-radius:12px;padding:12px;margin-bottom:12px;transition:border-color .2s}
-.logo-upload-card:hover{border-color:var(--primary)}
-.logo-preview-box{width:64px;height:64px;border:1px dashed #b0ccf0;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0}
-.logo-preview-box img{max-width:100%;max-height:100%;object-fit:contain}
 .template-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 10px}.template-fields .full{grid-column:1/-1}
 .template-fields textarea{width:100%;min-height:62px;resize:vertical;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font:inherit;outline:none}.template-fields textarea:focus{border-color:var(--primary)}
 .template-checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px 10px;margin:4px 0 12px}.template-checks label{display:flex;align-items:center;gap:7px;cursor:pointer;font-size:12px;color:var(--text)}.template-checks input{width:auto}
@@ -373,59 +367,6 @@ table.data td{padding:12px;border-bottom:1px solid var(--line)}
           <button type="button" onclick="applyReceiptPreset('friendly')">Thân thiện</button>
         </div>
 
-        <!-- Khối Logo cửa hàng / doanh nghiệp -->
-        <div class="logo-upload-card">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-            <b style="font-size:13px;color:var(--text);display:flex;align-items:center;gap:6px">🖼️ Logo cửa hàng / Doanh nghiệp</b>
-            <span style="font-size:11px;color:var(--muted)">PNG, JPG, WEBP</span>
-          </div>
-          <div style="display:flex;gap:12px;align-items:center">
-            <div id="tplLogoPreviewBox" class="logo-preview-box">
-              <span id="tplLogoEmpty" style="font-size:26px;color:#94a3b8">🏪</span>
-              <img id="tplLogoImg" src="" style="display:none" alt="Logo cửa hàng">
-            </div>
-            <div style="flex:1;display:flex;flex-direction:column;gap:6px">
-              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-                <label class="btn btn-primary" style="padding:6px 12px;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px">
-                  📁 Tải logo lên <input type="file" id="tplLogoFile" accept="image/png,image/jpeg,image/webp" style="display:none" onchange="handleReceiptLogoUpload(this)">
-                </label>
-                <button type="button" class="btn btn-ghost" id="tplLogoRemoveBtn" style="padding:6px 10px;font-size:12px;color:var(--red);display:none" onclick="removeReceiptLogo()">🗑️ Xóa logo</button>
-              </div>
-              <div style="font-size:11px;color:var(--muted)">Tùy chỉnh cỡ &amp; căn lề để logo hiển thị vừa vặn, đẹp mắt trên hóa đơn</div>
-            </div>
-          </div>
-
-          <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 10px;margin-top:10px;padding-top:10px;border-top:1px solid #e0edff">
-            <div class="field" style="margin-bottom:0">
-              <label style="display:flex;justify-content:space-between;align-items:center">
-                <span>Cỡ logo (chiều rộng)</span>
-                <span id="tplLogoSizeBadge" style="font-weight:700;color:var(--primary);font-size:12px">35mm</span>
-              </label>
-              <div style="display:flex;align-items:center;gap:8px">
-                <input type="range" id="tplLogoSize" min="15" max="65" step="1" value="35" style="flex:1" oninput="updateLogoSizeDisplay(this.value)">
-                <select id="tplLogoSizeSelect" style="width:96px;padding:6px;font-size:11px" onchange="$('#tplLogoSize').value=this.value;updateLogoSizeDisplay(this.value);">
-                  <option value="20">Rất nhỏ (20mm)</option>
-                  <option value="25">Nhỏ (25mm)</option>
-                  <option value="30">30mm</option>
-                  <option value="35" selected>Chuẩn (35mm)</option>
-                  <option value="40">40mm</option>
-                  <option value="45">Lớn (45mm)</option>
-                  <option value="50">Rất lớn (50mm)</option>
-                  <option value="60">Tối đa (60mm)</option>
-                </select>
-              </div>
-            </div>
-            <div class="field" style="margin-bottom:0">
-              <label>Căn lề logo</label>
-              <select id="tplLogoAlign">
-                <option value="center">Căn giữa (Khuyên dùng)</option>
-                <option value="left">Căn trái</option>
-                <option value="right">Căn phải</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
         <div class="template-fields">
           <div class="field full"><label>Tên cửa hàng <span style="font-weight:400">(dòng tiêu đề lớn)</span></label><input id="shopName" placeholder="VD: CÀ PHÊ BÌNH MINH"></div>
           <div class="field"><label>Địa chỉ</label><input id="shopAddr"></div>
@@ -444,8 +385,6 @@ table.data td{padding:12px;border-bottom:1px solid var(--line)}
         </div>
 
         <div class="template-checks">
-          <label><input type="checkbox" id="tplShowLogo"> Hiện logo trên hóa đơn</label>
-          <label><input type="checkbox" id="tplShowLogoTemp"> In logo cả phiếu tạm tính</label>
           <label><input type="checkbox" id="tplShowAddress"> Hiện địa chỉ</label>
           <label><input type="checkbox" id="tplShowHotline"> Hiện hotline</label>
           <label><input type="checkbox" id="tplShowCustomer"> Hiện khách hàng</label>
@@ -1376,46 +1315,12 @@ function completePayment(){
 }
 
 /* ================= SHOP INFO & VIETQR ================= */
-function safeLogoImage(value){
-  const s = String(value||'');
-  return (/^data:image\/(png|jpeg|webp|gif|svg\+xml);base64,[a-z0-9+/=]+$/i.test(s) || /^data:image\/svg\+xml;utf8,/i.test(s) || /^https?:\/\//i.test(s)) ? s : '';
-}
-function logoImageAsCompressedDataUrl(file){
-  return new Promise((resolve,reject)=>{
-    const reader=new FileReader();
-    reader.onerror=()=>reject(new Error('Không đọc được tệp ảnh logo'));
-    reader.onload=()=>{
-      const image=new Image();
-      image.onerror=()=>reject(new Error('Tệp không phải hình ảnh hợp lệ'));
-      image.onload=()=>{
-        const maxSide=600;
-        const ratio=Math.min(1, maxSide/Math.max(image.width, image.height));
-        const width=Math.max(1, Math.round(image.width*ratio));
-        const height=Math.max(1, Math.round(image.height*ratio));
-        const canvas=document.createElement('canvas');
-        canvas.width=width; canvas.height=height;
-        const ctx=canvas.getContext('2d');
-        ctx.clearRect(0,0,width,height);
-        ctx.drawImage(image,0,0,width,height);
-        let result = canvas.toDataURL('image/png');
-        if(result.length > 260000){
-          const jpegResult = canvas.toDataURL('image/jpeg', 0.88);
-          if(jpegResult.length < result.length) result = jpegResult;
-        }
-        resolve(result);
-      };
-      image.src=String(reader.result);
-    };
-    reader.readAsDataURL(file);
-  });
-}
 let shop = load('shopinfo', {name:'POS SHOP', addr:'Cửa hàng F&B - 123 Nguyễn Trãi, Q.1', hotline:'1900 1234', thanks:'Cảm ơn Quý khách - Hẹn gặp lại!',
-  bank:'VCB', acc:'', accName:'', qrTemp:true, vatOn:true, vatRate:8, logo:''});
-shop.vatOn = shop.vatOn !== false; shop.vatRate = +shop.vatRate || 8; shop.logo = safeLogoImage(shop.logo);
+  bank:'VCB', acc:'', accName:'', qrTemp:true, vatOn:true, vatRate:8});
+shop.vatOn = shop.vatOn !== false; shop.vatRate = +shop.vatRate || 8;
 const DEFAULT_RECEIPT_TEMPLATE = {
   paper:'80', margin:2, font:'sans', bodySize:12, titleSize:22, align:'center',
   qrSize:40, qrAlign:'center',
-  logo:'', showLogo:true, logoSize:35, logoAlign:'center', showLogoTemp:true,
   topText:'', bottomText:'', showAddress:true, showHotline:true, showCustomer:true,
   showTable:true, showPayment:true, showDiscount:true, showVat:true, showQr:true
 };
@@ -1429,10 +1334,7 @@ function normalizeReceiptTemplate(value={}){
   t.align = ['left','center','right'].includes(t.align) ? t.align : DEFAULT_RECEIPT_TEMPLATE.align;
   t.qrSize = [28,32,36,40,44,48,52].includes(Number(t.qrSize)) ? Number(t.qrSize) : DEFAULT_RECEIPT_TEMPLATE.qrSize;
   t.qrAlign = ['left','center','right'].includes(t.qrAlign) ? t.qrAlign : DEFAULT_RECEIPT_TEMPLATE.qrAlign;
-  t.logo = safeLogoImage(t.logo || (typeof shop!=='undefined'?shop.logo:''));
-  t.logoSize = Number(t.logoSize) >= 15 && Number(t.logoSize) <= 70 ? Number(t.logoSize) : DEFAULT_RECEIPT_TEMPLATE.logoSize;
-  t.logoAlign = ['left','center','right'].includes(t.logoAlign) ? t.logoAlign : DEFAULT_RECEIPT_TEMPLATE.logoAlign;
-  ['showAddress','showHotline','showCustomer','showTable','showPayment','showDiscount','showVat','showQr','showLogo','showLogoTemp'].forEach(k=>t[k]=t[k]!==false);
+  ['showAddress','showHotline','showCustomer','showTable','showPayment','showDiscount','showVat','showQr'].forEach(k=>t[k]=t[k]!==false);
   t.topText = String(t.topText||'').slice(0,300); t.bottomText = String(t.bottomText||'').slice(0,300);
   return t;
 }
@@ -1442,7 +1344,7 @@ const escapeHTML = value => String(value??'').replace(/[&<>"']/g, c=>({'&':'&amp
 const receiptTextHTML = value => escapeHTML(value).replace(/\r?\n/g,'<br>');
 function receiptStyle(){
   const t = receiptTemplate, width = Number(t.paper) - t.margin*2;
-  return `--receipt-width:${width}mm;--receipt-font:${RECEIPT_FONT[t.font]};--receipt-size:${t.bodySize}px;--receipt-title:${t.titleSize}px;--receipt-qr-size:${t.qrSize}mm;--receipt-qr-align:${t.qrAlign};--receipt-logo-size:${t.logoSize||35}mm;--receipt-logo-align:${t.logoAlign||t.align}`;
+  return `--receipt-width:${width}mm;--receipt-font:${RECEIPT_FONT[t.font]};--receipt-size:${t.bodySize}px;--receipt-title:${t.titleSize}px;--receipt-qr-size:${t.qrSize}mm;--receipt-qr-align:${t.qrAlign}`;
 }
 function receiptTemplateName(){ return receiptTemplate.paper==='58' ? 'K58' : 'K80'; }
 const BANKS = [
@@ -1538,11 +1440,7 @@ function renderReceiptHTML(order, options={}){
   const allowQr = t.showQr && isPaymentAccountComplete(account) && (isTemp ? shop.qrTemp : o.method!=='cash');
   const qrSvg = allowQr ? vietQrSvg(vietQrForAccount(account,total,isTemp?'Tam tinh':('HD #'+receiptNo))) : '';
   const qrBlock = qrSvg ? `<div class="receipt-payment-account" style="text-align:${t.qrAlign}"><b>${escapeHTML(bankOf(account.bank)[1])} · ${escapeHTML(account.acc)}</b><span>${escapeHTML(account.name)}</span></div><div class="receipt-qr">${qrSvg}<div class="inv-sub">Quét mã để chuyển khoản</div></div>` : '';
-  const logoUrl = t.logo || shop.logo || '';
-  const showLogoHere = t.showLogo && logoUrl && (!isTemp || t.showLogoTemp !== false);
-  const logoBlock = showLogoHere ? `<div class="receipt-logo" style="text-align:${t.logoAlign||t.align}"><img src="${logoUrl}" alt="Logo" style="width:${t.logoSize||35}mm;max-width:100%;max-height:55mm;object-fit:contain;display:inline-block;vertical-align:middle;"></div>` : '';
   return `<div class="receipt" style="${receiptStyle()}">
-    ${logoBlock}
     ${receiptNote(t.topText,'top')}
     <div class="inv-store" style="text-align:${t.align}">${escapeHTML(shop.name)}</div>
     ${(t.showAddress||t.showHotline) ? `<div class="inv-sub" style="text-align:${t.align}">${t.showAddress&&shop.addr?receiptTextHTML(shop.addr):''}${t.showAddress&&shop.addr&&t.showHotline&&shop.hotline?'<br>':''}${t.showHotline&&shop.hotline?'Hotline: '+escapeHTML(shop.hotline):''}</div>`:''}
@@ -1594,139 +1492,15 @@ function openPrinter(){
   renderTemplatePreview();
   $('#printerOverlay').classList.add('show');
 }
-let cachedEscposLogo = {dataUrl:'', widthMm:0, paper:'80', bytes:null};
-async function handleReceiptLogoUpload(input){
-  const file = input.files?.[0]; if(!file) return;
-  if(!/^image\/(png|jpeg|webp)$/i.test(file.type)){ toast('⚠️ Chỉ nhận ảnh logo PNG, JPG hoặc WEBP'); input.value=''; return; }
-  if(file.size > 8*1024*1024){ toast('⚠️ Ảnh quá lớn, vui lòng chọn logo dưới 8MB'); input.value=''; return; }
-  try{
-    const dataUrl = await logoImageAsCompressedDataUrl(file);
-    receiptTemplate.logo = dataUrl;
-    receiptTemplate.showLogo = true;
-    shop.logo = dataUrl;
-    localStorage.setItem('posshop_shopinfo', JSON.stringify(shop));
-    save('receiptTemplate', receiptTemplate);
-    cachedEscposLogo = {dataUrl:'', widthMm:0, paper:'80', bytes:null};
-    refreshEscposLogoCache();
-    fillReceiptTemplateForm();
-    renderTemplatePreview();
-    toast('✅ Đã tải logo cửa hàng thành công!');
-  }catch(err){
-    console.error(err);
-    toast('⚠️ Không thể xử lý ảnh logo: ' + (err.message||''));
-  }finally{
-    input.value = '';
-  }
-}
-function removeReceiptLogo(){
-  receiptTemplate.logo = '';
-  shop.logo = '';
-  localStorage.setItem('posshop_shopinfo', JSON.stringify(shop));
-  save('receiptTemplate', receiptTemplate);
-  cachedEscposLogo = {dataUrl:'', widthMm:0, paper:'80', bytes:null};
-  fillReceiptTemplateForm();
-  renderTemplatePreview();
-  toast('🗑️ Đã xóa logo khỏi mẫu in');
-}
-function renderReceiptLogoPreview(){
-  const logo = receiptTemplate.logo || shop.logo || '';
-  const img = $('#tplLogoImg');
-  const empty = $('#tplLogoEmpty');
-  const rmBtn = $('#tplLogoRemoveBtn');
-  if(img && empty && rmBtn){
-    if(logo){
-      img.src = logo;
-      img.style.display = 'block';
-      empty.style.display = 'none';
-      rmBtn.style.display = 'inline-flex';
-    }else{
-      img.src = '';
-      img.style.display = 'none';
-      empty.style.display = 'block';
-      rmBtn.style.display = 'none';
-    }
-  }
-}
-function updateLogoSizeDisplay(val){
-  const size = Math.max(15, Math.min(70, Number(val)||35));
-  if($('#tplLogoSizeBadge')) $('#tplLogoSizeBadge').textContent = size + 'mm';
-  if($('#tplLogoSizeSelect')) $('#tplLogoSizeSelect').value = size;
-  saveTemplateFromForm();
-  refreshEscposLogoCache();
-}
-function refreshEscposLogoCache(){
-  const logo = receiptTemplate.logo || shop.logo || '';
-  if(!logo){ cachedEscposLogo = {dataUrl:'', widthMm:0, paper:'80', bytes:null}; return; }
-  const widthMm = Number(receiptTemplate.logoSize)||35;
-  const paper = receiptTemplate.paper||'80';
-  convertDataUrlToEscposRaster(logo, widthMm, paper).then(bytes => {
-    cachedEscposLogo = {dataUrl:logo, widthMm, paper, bytes};
-  });
-}
-function convertDataUrlToEscposRaster(dataUrl, widthMm, paper){
-  if(!dataUrl) return Promise.resolve(null);
-  return new Promise(resolve=>{
-    const img = new Image();
-    img.onload = () => {
-      try{
-        const maxDots = paper === '58' ? 384 : 576;
-        const targetDots = Math.min(maxDots, Math.max(64, Math.round(widthMm * 8)));
-        const widthDots = Math.floor(targetDots / 8) * 8;
-        const heightDots = Math.max(1, Math.round((img.height / img.width) * widthDots));
-        const canvas = document.createElement('canvas');
-        canvas.width = widthDots;
-        canvas.height = heightDots;
-        const ctx = canvas.getContext('2d');
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, widthDots, heightDots);
-        ctx.drawImage(img, 0, 0, widthDots, heightDots);
-        const imgData = ctx.getImageData(0, 0, widthDots, heightDots);
-        const d = imgData.data;
-        const xL = (widthDots / 8) & 0xFF;
-        const xH = ((widthDots / 8) >> 8) & 0xFF;
-        const yL = heightDots & 0xFF;
-        const yH = (heightDots >> 8) & 0xFF;
-        const bytes = [0x1D, 0x76, 0x30, 0x00, xL, xH, yL, yH];
-        for(let y = 0; y < heightDots; y++){
-          for(let x = 0; x < widthDots; x += 8){
-            let byte = 0;
-            for(let b = 0; b < 8; b++){
-              const px = x + b;
-              const idx = (y * widthDots + px) * 4;
-              const r = d[idx], g = d[idx+1], bl = d[idx+2], a = d[idx+3];
-              const lum = a < 128 ? 255 : (r * 0.299 + g * 0.587 + bl * 0.114);
-              if(lum < 165){ byte |= (1 << (7 - b)); }
-            }
-            bytes.push(byte);
-          }
-        }
-        resolve(bytes);
-      }catch(e){
-        console.warn('Lỗi tạo ESC/POS bitmap logo:', e);
-        resolve(null);
-      }
-    };
-    img.onerror = () => resolve(null);
-    img.src = dataUrl;
-  });
-}
 function fillReceiptTemplateForm(){
   const t=receiptTemplate;
   $('#tplTopText').value=t.topText; $('#tplBottomText').value=t.bottomText; $('#tplPaper').value=t.paper;
   $('#tplMargin').value=t.margin; $('#tplFont').value=t.font; $('#tplBodySize').value=t.bodySize;
   $('#tplTitleSize').value=t.titleSize; $('#tplAlign').value=t.align; $('#tplQrSize').value=t.qrSize; $('#tplQrAlign').value=t.qrAlign;
-  $('#tplLogoSize').value=t.logoSize||35;
-  if($('#tplLogoSizeSelect')) $('#tplLogoSizeSelect').value=t.logoSize||35;
-  if($('#tplLogoSizeBadge')) $('#tplLogoSizeBadge').textContent=(t.logoSize||35)+'mm';
-  $('#tplLogoAlign').value=t.logoAlign||'center';
-  $('#tplShowLogo').checked=t.showLogo!==false;
-  $('#tplShowLogoTemp').checked=t.showLogoTemp!==false;
   $('#tplShowAddress').checked=t.showAddress; $('#tplShowHotline').checked=t.showHotline;
   $('#tplShowCustomer').checked=t.showCustomer; $('#tplShowTable').checked=t.showTable;
   $('#tplShowPayment').checked=t.showPayment; $('#tplShowDiscount').checked=t.showDiscount;
   $('#tplShowVat').checked=t.showVat; $('#tplShowQr').checked=t.showQr;
-  renderReceiptLogoPreview();
-  refreshEscposLogoCache();
 }
 function readReceiptTemplateForm(){
   return normalizeReceiptTemplate({
@@ -1734,11 +1508,6 @@ function readReceiptTemplateForm(){
     paper:$('#tplPaper').value, margin:$('#tplMargin').value, font:$('#tplFont').value,
     bodySize:$('#tplBodySize').value, titleSize:$('#tplTitleSize').value, align:$('#tplAlign').value,
     qrSize:$('#tplQrSize').value, qrAlign:$('#tplQrAlign').value,
-    logo: receiptTemplate.logo || shop.logo || '',
-    logoSize: Number($('#tplLogoSize').value)||35,
-    logoAlign: $('#tplLogoAlign').value,
-    showLogo: $('#tplShowLogo').checked,
-    showLogoTemp: $('#tplShowLogoTemp').checked,
     showAddress:$('#tplShowAddress').checked, showHotline:$('#tplShowHotline').checked,
     showCustomer:$('#tplShowCustomer').checked, showTable:$('#tplShowTable').checked,
     showPayment:$('#tplShowPayment').checked, showDiscount:$('#tplShowDiscount').checked,
@@ -1749,17 +1518,14 @@ function savePr(){
   prSettings = {type:$('#prType').value, lan:$('#prLan').value.trim(), autoTemp:$('#prAutoTemp').checked};
   save('printer',prSettings);
   if($('#prIp').value.trim()) localStorage.setItem('posshop_printerIp', $('#prIp').value.trim());
-  const curLogo = receiptTemplate.logo || shop.logo || '';
   shop = {name:$('#shopName').value.trim()||'POS SHOP', addr:$('#shopAddr').value.trim(), hotline:$('#shopHotline').value.trim(),
     thanks:$('#shopThanks').value.trim(), bank:$('#shopBank').value, acc:$('#shopAcc').value.trim(),
-    accName:$('#shopAccName').value.trim().toUpperCase(), qrTemp:$('#shopQrTemp').checked, logo: curLogo};
+    accName:$('#shopAccName').value.trim().toUpperCase(), qrTemp:$('#shopQrTemp').checked};
   localStorage.setItem('posshop_shopinfo', JSON.stringify(shop));
   receiptTemplate = readReceiptTemplateForm();
-  receiptTemplate.logo = curLogo;
   save('receiptTemplate',receiptTemplate);
-  refreshEscposLogoCache();
 }
-const RECEIPT_TEMPLATE_INPUTS = ['tplTopText','tplBottomText','tplPaper','tplMargin','tplFont','tplBodySize','tplTitleSize','tplAlign','tplQrSize','tplQrAlign','tplLogoSize','tplLogoAlign','tplShowLogo','tplShowLogoTemp','tplShowAddress','tplShowHotline','tplShowCustomer','tplShowTable','tplShowPayment','tplShowDiscount','tplShowVat','tplShowQr'];
+const RECEIPT_TEMPLATE_INPUTS = ['tplTopText','tplBottomText','tplPaper','tplMargin','tplFont','tplBodySize','tplTitleSize','tplAlign','tplQrSize','tplQrAlign','tplShowAddress','tplShowHotline','tplShowCustomer','tplShowTable','tplShowPayment','tplShowDiscount','tplShowVat','tplShowQr'];
 function saveTemplateFromForm(){ savePr(); renderTemplatePreview(); }
 ['shopName','shopAddr','shopHotline','shopThanks','shopQrTemp','shopBank','shopAcc','shopAccName'].forEach(id=>{ const el=$('#'+id); el.oninput=saveTemplateFromForm; el.onchange=saveTemplateFromForm; });
 RECEIPT_TEMPLATE_INPUTS.forEach(id=>{ const el=$('#'+id); el.oninput=saveTemplateFromForm; el.onchange=saveTemplateFromForm; });
@@ -1768,19 +1534,16 @@ $('#prLan').onchange = savePr;
 $('#prAutoTemp').onchange = savePr;
 function applyReceiptPreset(kind){
   const presets = {
-    classic:{paper:'80',margin:2,font:'mono',bodySize:12,titleSize:20,align:'center',qrSize:40,qrAlign:'center',logoSize:35,logoAlign:'center'},
-    compact:{paper:'58',margin:1,font:'mono',bodySize:11,titleSize:18,align:'center',qrSize:32,qrAlign:'center',logoSize:28,logoAlign:'center',showCustomer:false,showVat:false},
-    friendly:{paper:'80',margin:3,font:'sans',bodySize:13,titleSize:24,align:'center',qrSize:44,qrAlign:'center',logoSize:42,logoAlign:'center',showCustomer:true,showVat:false}
+    classic:{paper:'80',margin:2,font:'mono',bodySize:12,titleSize:20,align:'center',qrSize:40,qrAlign:'center'},
+    compact:{paper:'58',margin:1,font:'mono',bodySize:11,titleSize:18,align:'center',qrSize:32,qrAlign:'center',showCustomer:false,showVat:false},
+    friendly:{paper:'80',margin:3,font:'sans',bodySize:13,titleSize:24,align:'center',qrSize:44,qrAlign:'center',showCustomer:true,showVat:false}
   };
-  const curLogo = receiptTemplate.logo || shop.logo || '';
-  receiptTemplate = normalizeReceiptTemplate({...receiptTemplate,...presets[kind], logo:curLogo});
+  receiptTemplate = normalizeReceiptTemplate({...receiptTemplate,...presets[kind]});
   save('receiptTemplate',receiptTemplate); fillReceiptTemplateForm(); renderTemplatePreview();
   toast('✨ Đã áp dụng mẫu '+({classic:'Cổ điển',compact:'Gọn gàng',friendly:'Thân thiện'}[kind]||''));
 }
 function resetReceiptTemplate(){
-  const curLogo = receiptTemplate.logo || shop.logo || '';
-  receiptTemplate=normalizeReceiptTemplate({...DEFAULT_RECEIPT_TEMPLATE, logo:curLogo});
-  save('receiptTemplate',receiptTemplate);
+  receiptTemplate=normalizeReceiptTemplate(DEFAULT_RECEIPT_TEMPLATE); save('receiptTemplate',receiptTemplate);
   fillReceiptTemplateForm(); renderTemplatePreview(); toast('↺ Đã khôi phục bố cục mẫu in mặc định');
 }
 async function connectPrinter(){
@@ -1847,11 +1610,6 @@ function escpos(lines){
   w([0x1B,0x40]);
   lines.forEach(l=>{
     if(l==='---') sep();
-    else if(l && l.bitmap) {
-      if(l.align==='right') w([0x1B,0x61,2]); else if(l.center || l.align==='center') w([0x1B,0x61,1]); else w([0x1B,0x61,0]);
-      w(l.bitmap);
-      w([0x1B,0x61,0]);
-    }
     else if(l && l.qr) w(escposQR(l.qr,l.align));
     else if(l && l.row3) row3(l.row3[0], l.row3[1], l.row3[2], l);
     else if(typeof l==='object') { if(l.left!==undefined) pair(l.left,l.right,l); else line(l.text,l); }
@@ -1868,13 +1626,10 @@ function orderToEscpos(o, title){
   const allowQr=t.showQr && isPaymentAccountComplete(account) && (isTemp ? shop.qrTemp : o.method!=='cash');
   const qrData = allowQr ? vietQrForAccount(account,total,isTemp?'Tam tinh':('HD #'+String(o.id||0).padStart(5,'0'))) : null;
   const extraLines = (text, opts={}) => String(text||'').split(/\r?\n/).filter(Boolean).map(text=>({text,align:t.align,...opts}));
-  const showLogoInEscpos = t.showLogo && (t.logo || shop.logo) && (!isTemp || t.showLogoTemp !== false);
-  const logoBitmap = showLogoInEscpos && cachedEscposLogo.bytes ? cachedEscposLogo.bytes : null;
   const itemRows = (o.items||[]).map(i=>{const p=products.find(x=>x.id===i.pid)||{name:'?',price:0}; const timed=p.itemType==='service'||Number.isFinite(Number(i.serviceDurationSeconds)); const duration=Number.isFinite(Number(i.serviceDurationSeconds))?Number(i.serviceDurationSeconds):serviceElapsedSeconds(i); const amount=Number.isFinite(Number(i.lineTotal))?Number(i.lineTotal):lineAmount(p,i); return [
     {text:timed?`${p.name} - ${formatServiceDuration(duration)}`:p.name}, {row3:[timed?VND(p.price)+'/h':VND(p.price), timed?'TG':String(i.qty), VND(amount)]}
   ];}).flat();
   return escpos([
-    ...(logoBitmap ? [{bitmap: logoBitmap, align: t.logoAlign || t.align}] : []),
     ...extraLines(t.topText),
     {text:shop.name, align:t.align, big:true, bold:true},
     ...(t.showAddress&&shop.addr ? [{text:shop.addr,align:t.align}] : []),
@@ -1946,7 +1701,6 @@ function printHTML(inner){ // in qua iframe an: mo ngay hop thoai in Windows, kh
     @page{size:${receiptTemplate.paper}mm auto;margin:0}
     *{box-sizing:border-box}body{margin:${receiptTemplate.margin}mm auto;color:#000;background:#fff}
     .receipt{width:var(--receipt-width);margin:0 auto;font-family:var(--receipt-font);font-size:var(--receipt-size);line-height:1.42;overflow-wrap:anywhere}
-    .receipt-logo{text-align:var(--receipt-logo-align,center);margin:0 0 6px;line-height:1}.receipt-logo img{max-width:100%;height:auto;display:inline-block;vertical-align:middle;object-fit:contain}
     .inv-store{font-size:var(--receipt-title);font-weight:900;letter-spacing:1px;line-height:1.15}.inv-sub{font-size:calc(var(--receipt-size) - 1px);color:#333}.inv-sep{border-top:1px dashed #000;margin:8px 0}.inv-line{display:flex;justify-content:space-between;gap:8px;padding:2px 0}.inv-line span:last-child{text-align:right;white-space:nowrap}.inv-big{font-size:calc(var(--receipt-size) + 3px);font-weight:900}.receipt-note{font-size:calc(var(--receipt-size) - 1px);line-height:1.5}.receipt-payment-account{font-size:calc(var(--receipt-size) - 1px);line-height:1.45;margin:9px 0 3px;overflow-wrap:anywhere}.receipt-payment-account b,.receipt-payment-account span{display:block}.receipt-payment-account b{font-size:var(--receipt-size);font-weight:800;letter-spacing:0}.receipt-payment-account span{margin-top:1px}.receipt-qr{text-align:var(--receipt-qr-align,center);margin-top:9px}.receipt-qr .vietqr-svg{width:var(--receipt-qr-size,40mm);height:var(--receipt-qr-size,40mm);display:block;margin:0 auto}
     </style></head><body>${inner}</body></html>`);
   doc.close();
