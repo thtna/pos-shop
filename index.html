@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1a73e8">
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%231a73e8'/%3E%3Ctext x='50' y='68' font-size='52' text-anchor='middle' fill='white'%3E🛒%3C/text%3E%3C/svg%3E">
 <title>POS Shop - Phần mềm bán hàng F&B</title>
 <style>
 :root{
@@ -592,6 +595,7 @@ http.createServer((req, res) => {
 
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.2/dist/ethers.umd.min.js"></script>
+<script src="./pwa-offline.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <script>
 /* qrcode-generator 1.4.4 — MIT License (bundled locally for offline receipt QR) */
@@ -646,7 +650,9 @@ let deletedOrders = load('deletedOrders', []); // lịch sử xóa đơn để a
 let tempPrints = load('tempPrints', []);       // lịch sử in tạm tính
 let tableTempLast = load('tableTempLast', {}); // lần in tạm tính gần nhất của từng bàn (đối chiếu khi xóa đơn)
 let inventoryMoves = load('inventoryMoves', []);
-const persist = () => { save('products',products); save('tables2',tables); save('torders',tableOrders); save('orders',orders); save('inventoryMoves',inventoryMoves); save('cats',CATS); save('deletedOrders',deletedOrders); save('tempPrints',tempPrints); save('tableTempLast',tableTempLast); };
+const persist = () => { save('products',products); save('tables2',tables); save('torders',tableOrders); save('orders',orders); save('inventoryMoves',inventoryMoves); save('cats',CATS); save('deletedOrders',deletedOrders); save('tempPrints',tempPrints); save('tableTempLast',tableTempLast);
+  // Offline-First: lưu bản sao danh mục vào IndexedDB để dùng khi mất mạng
+  if(window.POSOffline) POSOffline.saveSnapshot({ products, tables, cats:CATS, shop, torders:tableOrders }); };
 function toast(msg){ const t=$('#toast'); t.textContent=msg; t.style.display='block'; setTimeout(()=>t.style.display='none',2600); }
 window.addEventListener('error', e=>{ toast('🐞 Lỗi: ' + (e.message||'không rõ') + (e.lineno?' (dòng '+e.lineno+')':'')); });
 function serviceElapsedSeconds(item, now=Date.now()){
@@ -1371,6 +1377,7 @@ function completePayment(){
   orders.push(order);
   delete tableOrders[currentTable];
   persist(); closePay(); render();
+  if(window.POSOffline) POSOffline.onOrderPaid(order); // Offline-First: đẩy lên backend hoặc xếp hàng chờ
   showInvoice(order);
   toast('🎉 Thanh toán thành công! Đã gửi bếp 🖨️');
 }
@@ -2491,12 +2498,14 @@ function cryptoComplete(){
   if(!deductSoldStock(items,`Đơn #${String(orderId).padStart(5,'0')} · Crypto`)){ cryptoStatus('⚠️ Đã nhận USDT nhưng tồn kho thay đổi. Hãy liên hệ quản lý để hoàn tất đơn thủ công.'); return; }
   cyCompleting=true;
   const orderItems=items.map(item=>{ const product=products.find(p=>p.id===item.pid); const serviceDurationSeconds=product?.itemType==='service'?serviceElapsedSeconds(item):undefined; return {...JSON.parse(JSON.stringify(item)), ...(serviceDurationSeconds===undefined?{}:{serviceDurationSeconds}), lineTotal:lineAmount(product,item)}; });
-  orders.push({ id:orderId, table:tb.name, zone:tb.zone,
+  const cryptoOrder={ id:orderId, table:tb.name, zone:tb.zone,
     time:new Date().toLocaleString('vi-VN',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit'}),
     items:orderItems, sub:quote.sub, disc:quote.disc, total:quote.total, method:'crypto', txHash:cyHash,
-    crypto:{asset:cyToken,network:'BEP20 · BNB Smart Chain',amount:cyAmountText,rate:cyRate,receiver:CRYPTO.receiver} });
+    crypto:{asset:cyToken,network:'BEP20 · BNB Smart Chain',amount:cyAmountText,rate:cyRate,receiver:CRYPTO.receiver} };
+  orders.push(cryptoOrder);
   delete tableOrders[currentTable];
   persist(); closePay(); cryptoClose(true); render();
+  if(window.POSOffline) POSOffline.onOrderPaid(cryptoOrder); // Offline-First
   showInvoice(orders[orders.length-1]);
   toast('🪙 Thanh toán crypto thành công!');
 }
