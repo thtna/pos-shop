@@ -188,6 +188,8 @@ table.data td{padding:12px;border-bottom:1px solid var(--line)}
     <nav class="nav">
       <a class="active" data-page="pos"><span class="icon">🧾</span><span class="txt">Bán hàng</span></a>
       <a data-page="orders"><span class="icon">📦</span><span class="txt">Đơn hàng</span></a>
+      <a data-page="deleted"><span class="icon">🗑️</span><span class="txt">Lịch sử xóa đơn</span></a>
+      <a data-page="tempprints"><span class="icon">🧾</span><span class="txt">Lịch sử in tạm tính</span></a>
       <a data-page="products"><span class="icon">🍔</span><span class="txt">Menu</span></a>
       <a data-page="tables"><span class="icon">🪑</span><span class="txt">Sơ đồ bàn</span></a>
       <a data-page="reports"><span class="icon">📊</span><span class="txt">Báo cáo</span></a>
@@ -457,6 +459,28 @@ http.createServer((req, res) => {
   </div>
 </div>
 
+<!-- Xóa đơn: bắt buộc nhập lý do -->
+<div class="overlay" id="cdOverlay">
+  <div class="modal" style="width:min(400px,94vw)">
+    <h3>🗑️ Xóa đơn — ghi lý do</h3>
+    <div style="background:var(--bg);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:13px" id="cdInfo"></div>
+    <div class="field"><label>Nhân viên thực hiện <b style="color:var(--red)">*</b> (bắt buộc)</label>
+      <input id="cdStaff" placeholder="Tên nhân viên hoặc admin (VD: Lan / Admin)"></div>
+    <div class="field"><label>Lý do xóa đơn <b style="color:var(--red)">*</b></label>
+      <input id="cdReason" placeholder="VD: Khách gọi nhầm món / Khách đổi món / Khách hủy..."></div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px" id="cdQuickReasons">
+      <button class="btn btn-ghost" style="padding:6px 12px;font-size:12px" onclick="document.getElementById('cdReason').value='Khách gọi nhầm món'">Gọi nhầm món</button>
+      <button class="btn btn-ghost" style="padding:6px 12px;font-size:12px" onclick="document.getElementById('cdReason').value='Khách đổi món'">Đổi món</button>
+      <button class="btn btn-ghost" style="padding:6px 12px;font-size:12px" onclick="document.getElementById('cdReason').value='Khách hủy đơn'">Khách hủy</button>
+      <button class="btn btn-ghost" style="padding:6px 12px;font-size:12px" onclick="document.getElementById('cdReason').value='Nhập sai món'">Nhập sai</button>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-ghost" style="flex:1" onclick="closeCancelDialog()">Quay lại</button>
+      <button class="btn btn-accent" style="flex:1" onclick="confirmCancelOrder()">🗑️ Xác nhận xóa</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <!-- ================= CRYPTO PAYMENT (USDT BEP20) ================= -->
@@ -557,8 +581,11 @@ products = load('products', products).map((p, index)=>normalizeProduct(p, index)
 tables = load('tables2', tables);
 tableOrders = load('torders', tableOrders);
 orders = load('orders', orders);
+let deletedOrders = load('deletedOrders', []); // lịch sử xóa đơn để admin kiểm soát
+let tempPrints = load('tempPrints', []);       // lịch sử in tạm tính
+let tableTempLast = load('tableTempLast', {}); // lần in tạm tính gần nhất của từng bàn (đối chiếu khi xóa đơn)
 let inventoryMoves = load('inventoryMoves', []);
-const persist = () => { save('products',products); save('tables2',tables); save('torders',tableOrders); save('orders',orders); save('inventoryMoves',inventoryMoves); save('cats',CATS); };
+const persist = () => { save('products',products); save('tables2',tables); save('torders',tableOrders); save('orders',orders); save('inventoryMoves',inventoryMoves); save('cats',CATS); save('deletedOrders',deletedOrders); save('tempPrints',tempPrints); save('tableTempLast',tableTempLast); };
 function toast(msg){ const t=$('#toast'); t.textContent=msg; t.style.display='block'; setTimeout(()=>t.style.display='none',2600); }
 window.addEventListener('error', e=>{ toast('🐞 Lỗi: ' + (e.message||'không rõ') + (e.lineno?' (dòng '+e.lineno+')':'')); });
 function serviceElapsedSeconds(item, now=Date.now()){
@@ -644,7 +671,7 @@ document.querySelectorAll('.nav a').forEach(a=>{
     a.classList.add('active'); page = a.dataset.page; render();
   };
 });
-const TITLES = {pos:'Bán hàng (POS)', orders:'Lịch sử đơn hàng', products:'Quản lý menu', tables:'Sơ đồ bàn', reports:'Báo cáo doanh thu'};
+const TITLES = {pos:'Bán hàng (POS)', orders:'Lịch sử đơn hàng', deleted:'Lịch sử xóa đơn', tempprints:'Lịch sử in tạm tính', products:'Quản lý menu', tables:'Sơ đồ bàn', reports:'Báo cáo doanh thu'};
 
 function render(){
   if(page!=='pos' && serviceClock){ clearInterval(serviceClock); serviceClock=null; }
@@ -652,6 +679,8 @@ function render(){
   const c = $('#content');
   if(page==='pos') c.innerHTML = renderPOS();
   if(page==='orders') c.innerHTML = renderOrders();
+  if(page==='deleted') c.innerHTML = renderDeletedOrders();
+  if(page==='tempprints') c.innerHTML = renderTempPrints();
   if(page==='products') c.innerHTML = renderProducts();
   if(page==='tables') c.innerHTML = renderTablesPage();
   if(page==='reports') c.innerHTML = renderReports();
@@ -696,7 +725,10 @@ function renderPOS(){
         <div class="row"><span>Tạm tính</span><b id="cartSub">${VND(sub)}</b></div>
         <div class="row total" style="color:var(--accent)"><span>TỔNG</span><span id="cartTotal">${VND(sub)}</span></div>
         <button class="btn btn-ghost" style="width:100%;justify-content:center" onclick="printTemp()" ${items.length?'':'disabled'}>🧾 In tạm tính</button>
-        <button class="btn btn-accent" onclick="openPay()" ${items.length?'':'disabled'}>💳 Thanh toán</button>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost" style="flex:1;justify-content:center;color:var(--red)" onclick="clearCurrentOrder()" ${items.length?'':'disabled'}>🗑️ Xóa đơn</button>
+          <button class="btn btn-accent" style="flex:2" onclick="openPay()" ${items.length?'':'disabled'}>💳 Thanh toán</button>
+        </div>
       </div>
     </div>
   </div>`;
@@ -818,6 +850,66 @@ function renderOrders(){
       <td>${{cash:'💵 Tiền mặt',card:'💳 Thẻ/QR',transfer:'📱 Chuyển khoản'}[o.method]}</td>
       <td><span class="tag green">Hoàn tất</span></td></tr>`).join('')}
   </table></div>`;
+}
+
+/* ================= LỊCH SỬ XÓA ĐƠN (kiểm soát bởi admin) ================= */
+function renderDeletedOrders(){
+  const total = deletedOrders.reduce((s,d)=>s+d.total,0);
+  const byStaff = {};
+  deletedOrders.forEach(d=>{ byStaff[d.staff]=(byStaff[d.staff]||0)+1; });
+  return `
+  <div class="grid stats" style="margin-bottom:16px">
+    <div class="card stat"><div class="label">🗑️ Số đơn đã xóa</div><div class="value" style="color:var(--red)">${deletedOrders.length}</div></div>
+    <div class="card stat"><div class="label">💰 Giá trị đơn bị xóa</div><div class="value">${VND(total)}</div></div>
+    <div class="card stat"><div class="label">👤 Theo nhân viên</div>
+      <div class="value" style="font-size:15px;line-height:1.6">${Object.keys(byStaff).length?Object.entries(byStaff).map(([k,v])=>`${escapeHTML(k)}: ${v} đơn`).join('<br>'):'—'}</div></div>
+  </div>
+  ${deletedOrders.length ? `<div class="card"><table class="data">
+    <tr><th>Thời gian xóa</th><th>Bàn / Khu vực</th><th>Món trong đơn bị xóa</th><th>Số món</th><th>Giá trị</th><th>Lý do</th><th>Người xóa</th><th>In tạm tính trước khi xóa?</th></tr>
+    ${deletedOrders.slice().reverse().map(d=>`<tr>
+      <td><b>${d.time}</b></td>
+      <td>${escapeHTML(d.table)}<br><small style="color:var(--muted)">${escapeHTML(d.zone)}</small></td>
+      <td style="max-width:280px"><small>${d.items.map(i=>`${escapeHTML(i.name)} ×${i.qty}`).join(', ')}</small></td>
+      <td>${d.itemCount}</td>
+      <td><b>${VND(d.total)}</b></td>
+      <td><span class="tag orange">${escapeHTML(d.reason)}</span></td>
+      <td>${escapeHTML(d.staff)}</td>
+      <td>${d.tempPrinted
+        ? `<span class="tag" style="background:#fde8e8;color:var(--red)">⚠️ ĐÃ in tạm tính lúc ${escapeHTML(d.tempPrintTime)} (${VND(d.tempPrintTotal)}) — cần kiểm tra!</span>`
+        : '<span class="tag gray">Không</span>'}</td>
+    </tr>`).join('')}
+  </table></div>
+  <div style="font-size:12px;color:var(--muted);margin-top:8px">⚠️ Dòng đỏ = nhân viên đã in tạm tính cho khách xong mới xóa đơn — admin nên đối chiếu lý do để phát hiện gian lận đổi chiếu tiền.</div>
+  <button class="btn btn-ghost" style="margin-top:12px;color:var(--red)" onclick="clearDeletedHistory()">🧹 Xóa sạch lịch sử (chỉ admin)</button>`
+  : '<div class="card" style="text-align:center;padding:50px;color:var(--muted)">Chưa có đơn nào bị xóa. 🎉<br><small>Mỗi lần xóa đơn ở màn bán hàng sẽ ghi lại: thời gian, bàn, món chi tiết, lý do, nhân viên.</small></div>'}`;
+}
+/* ================= LỊCH SỬ IN TẠM TÍNH ================= */
+function renderTempPrints(){
+  const today = new Date().toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric'});
+  const todayCount = tempPrints.filter(p=>p.time.endsWith(today)).length;
+  return `
+  <div class="grid stats" style="margin-bottom:16px">
+    <div class="card stat"><div class="label">🧾 Tổng lần in tạm tính</div><div class="value">${tempPrints.length}</div></div>
+    <div class="card stat"><div class="label">📅 Hôm nay (${today})</div><div class="value" style="color:var(--primary)">${todayCount}</div></div>
+    <div class="card stat"><div class="label">💰 Giá trị in gần nhất</div><div class="value">${tempPrints.length?VND(tempPrints[tempPrints.length-1].total):'0đ'}</div></div>
+  </div>
+  ${tempPrints.length ? `<div class="card"><table class="data">
+    <tr><th>Thời gian in</th><th>Bàn / Khu vực</th><th>Món trong bill tạm tính</th><th>Số món</th><th>Giá trị đơn lúc in</th><th>Nhân viên</th></tr>
+    ${tempPrints.slice().reverse().map(p=>`<tr>
+      <td><b>${p.time}</b></td>
+      <td>${escapeHTML(p.table)}<br><small style="color:var(--muted)">${escapeHTML(p.zone)}</small></td>
+      <td style="max-width:280px"><small>${p.items.map(i=>`${escapeHTML(i.name)} ×${i.qty}`).join(', ')}</small></td>
+      <td>${p.itemCount}</td>
+      <td><b>${VND(p.total)}</b></td>
+      <td>${escapeHTML(p.staff||'—')}</td>
+    </tr>`).join('')}
+  </table></div>
+  <button class="btn btn-ghost" style="margin-top:12px;color:var(--red)" onclick="if(confirm('Xóa toàn bộ lịch sử in tạm tính?')){tempPrints=[];persist();render();}">🧹 Xóa sạch lịch sử (chỉ admin)</button>`
+  : '<div class="card" style="text-align:center;padding:50px;color:var(--muted)">Chưa in tạm tính lần nào. 🧾<br><small>Mỗi lần bấm "🧾 In tạm tính" ở màn bán hàng sẽ ghi lại: thời gian, bàn, món chi tiết, giá trị.</small></div>'}`;
+}
+function clearDeletedHistory(){
+  if(!confirm('Xóa TOÀN BỘ lịch sử xóa đơn? Hành động này không thể hoàn tác!')) return;
+  deletedOrders = []; persist(); render(); toast('🧹 Đã xóa lịch sử xóa đơn');
 }
 
 /* ================= PRODUCTS ================= */
@@ -1623,6 +1715,19 @@ function printTemp(){
   const tb = tables.find(x=>x.id===currentTable);
   const tmp = {table:tb.name, zone:tb.zone, time:new Date().toLocaleString('vi-VN',{hour:'2-digit',minute:'2-digit'}),
     items, sub:cartTotal(items), disc:0, total:cartTotal(items), method:'cash'};
+  // ===== LỊCH SỬ IN TẠM TÍNH: ghi lại để admin đối chiếu khi đơn bị xóa =====
+  const tempRec = {
+    id: Date.now(),
+    time: new Date().toLocaleString('vi-VN',{hour:'2-digit',minute:'2-digit',second:'2-digit',day:'2-digit',month:'2-digit',year:'numeric'}),
+    tableId: currentTable, table: tb.name, zone: tb.zone,
+    itemCount: items.reduce((s,i)=>s+i.qty,0), total: tmp.total,
+    staff: localStorage.getItem('posshop_staff') || '',
+    items: items.map(i=>{const p=products.find(x=>x.id===i.pid); return {name:p?p.name:'?',qty:i.qty};}),
+  };
+  tempPrints.push(tempRec);
+  if(tempPrints.length>500) tempPrints = tempPrints.slice(-500); // giới hạn bộ nhớ
+  tableTempLast[currentTable] = {time: tempRec.time, total: tempRec.total, itemCount: tempRec.itemCount, printId: tempRec.id};
+  persist();
   const bytes = orderToEscpos(tmp, '*** TAM TINH (chua thanh toan) ***');
   const html = renderReceiptHTML(tmp,{isTemp:true});
   doPrint(bytes, html); // bấm chủ động: in thẳng máy in, nếu chưa kết nối sẽ hỏi nhỏ gọn
@@ -1813,6 +1918,50 @@ function products_renderSearch(list,q){
   $('#content').innerHTML = `<div class="card"><table class="data"><tr><th>Món</th><th>Nhóm</th><th>Giá</th></tr>
     ${list.map(p=>`<tr><td>${EMOJI[p.cat]} <b>${p.name}</b></td><td><span class="tag blue">${p.cat}</span></td><td><b>${VND(p.price)}</b></td></tr>`).join('')}
     </table></div>` || '';
+}
+
+/* Xóa trọn đơn của bàn đang chọn — bắt buộc ghi lý do để admin kiểm soát */
+function clearCurrentOrder(){
+  const items = tableOrders[currentTable];
+  if(!items || !items.length){ toast('⚠️ Đơn đang trống'); return; }
+  const n = items.reduce((s,i)=>s+i.qty,0);
+  const tb = tables.find(t=>t.id===currentTable);
+  $('#cdInfo').innerHTML = `Bàn <b>${tb?tb.name:'?'}</b> · <b>${n}</b> món · <b>${VND(cartTotal(items))}</b><br><small style="color:var(--muted)">${items.map(i=>{const p=products.find(x=>x.id===i.pid); return (p?p.name:'?')+' ×'+i.qty}).join(', ')}</small>`;
+  $('#cdStaff').value = localStorage.getItem('posshop_staff')||'';
+  $('#cdReason').value = '';
+  $('#cdOverlay').classList.add('show');
+  setTimeout(()=>$('#cdReason').focus(),100);
+}
+function closeCancelDialog(){ $('#cdOverlay').classList.remove('show'); }
+function confirmCancelOrder(){
+  const items = tableOrders[currentTable];
+  if(!items || !items.length){ closeCancelDialog(); return; }
+  const reason = $('#cdReason').value.trim();
+  if(!reason){ toast('⚠️ Vui lòng ghi lý do xóa đơn'); $('#cdReason').focus(); return; }
+  const staff = $('#cdStaff').value.trim();
+  if(!staff){ toast('⚠️ BẮT BUỘC nhập tên nhân viên hoặc admin mới được xóa đơn'); $('#cdStaff').focus(); return; }
+  localStorage.setItem('posshop_staff', staff);
+  const tb = tables.find(t=>t.id===currentTable);
+  const n = items.reduce((s,i)=>s+i.qty,0);
+  // đối chiếu: đơn này đã từng in tạm tính cho khách chưa?
+  const tempInfo = tableTempLast[currentTable] || null;
+  deletedOrders.push({
+    id: Date.now(),
+    time: new Date().toLocaleString('vi-VN',{hour:'2-digit',minute:'2-digit',second:'2-digit',day:'2-digit',month:'2-digit',year:'numeric'}),
+    table: tb?tb.name:'?', zone: tb?tb.zone:'',
+    itemCount: n, total: cartTotal(items),
+    items: items.map(i=>{const p=products.find(x=>x.id===i.pid); return {name:p?p.name:'?',qty:i.qty};}),
+    reason, staff,
+    tempPrinted: !!tempInfo,
+    tempPrintTime: tempInfo ? tempInfo.time : '',
+    tempPrintTotal: tempInfo ? tempInfo.total : 0,
+  });
+  delete tableOrders[currentTable];
+  delete tableTempLast[currentTable];
+  persist(); closeCancelDialog(); render();
+  toast(tempInfo
+    ? `⚠️ Đã xóa đơn ${tb?tb.name:''} — ĐÃ IN TẠM TÍNH trước đó, ghi rõ vào lịch sử để admin kiểm tra`
+    : `🗑️ Đã xóa đơn ${tb?tb.name:''} (${n} món) — đã ghi vào lịch sử xóa đơn`);
 }
 
 /* ================= CRYPTO PAYMENT (USDT BEP20 - Web3) ================= */
