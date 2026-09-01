@@ -4,12 +4,12 @@
  *  - Tài nguyên tĩnh & thư viện CDN (SheetJS, ethers, qrcode): cache-first, tự cập nhật nền
  *  - Chỉ xử lý GET; API/đồng bộ (POST) không bao giờ cache
  */
-const CACHE_NAME = 'posshop-v3';
+const CACHE_NAME = 'posshop-v8-billiards-ops';
 const PRECACHE = [
   './',
   './index.html',
   './manifest.json',
-  './pwa-offline.js',
+  './pwa-offline.js?v=20260901-billiards-ops',
   'https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js',
   'https://cdn.jsdelivr.net/npm/ethers@6.13.2/dist/ethers.umd.min.js',
 ];
